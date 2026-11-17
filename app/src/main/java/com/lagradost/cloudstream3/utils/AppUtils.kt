@@ -3,7 +3,8 @@ package com.lagradost.cloudstream3.utils
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 
 object AppUtils {
-    private val mapper = jacksonObjectMapper()
+    @PublishedApi
+    internal val mapper = jacksonObjectMapper()
 
     @JvmStatic
     fun toJson(obj: Any): String {

@@ -5,7 +5,7 @@ import java.io.Serializable
 
 open class ExtractorApi {
     companion object {
-        const val $stable = 8
+        const val `$stable` = 8
     }
 
     open val name: String = ""

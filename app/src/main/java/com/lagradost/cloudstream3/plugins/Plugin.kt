@@ -10,7 +10,7 @@ annotation class CloudstreamPlugin
 
 open class Plugin {
     companion object {
-        const val $stable = 8
+        const val `$stable` = 8
     }
 
     var openSettings: ((Context) -> Unit)? = null

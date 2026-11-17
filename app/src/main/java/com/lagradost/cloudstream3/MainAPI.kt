@@ -4,7 +4,7 @@ import com.lagradost.cloudstream3.utils.ExtractorLink
 
 abstract class MainAPI {
     companion object {
-        const val $stable = 8
+        const val `$stable` = 8
     }
 
     open var mainUrl: String = ""
