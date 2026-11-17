@@ -1,13 +1,28 @@
 package com.primevision.app.data.repository
 
+import android.util.Log
 import com.primevision.app.data.model.Category
 import com.primevision.app.data.model.Movie
+import com.primevision.app.data.plugin.Cs3PluginLoader
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
+import java.util.Locale
 
 object MovieRepository {
+    private const val TAG = "MovieRepository"
+    private const val TMDB_API_KEY = "1865f43a0549ca50d341dd9ab8b29f49"
+    private const val TMDB_BASE_URL = "https://api.themoviedb.org/3"
+    private const val TMDB_IMG_POSTER = "https://image.tmdb.org/t/p/w780"
+    private const val TMDB_IMG_BACKDROP = "https://image.tmdb.org/t/p/original"
+
+    private val httpClient = OkHttpClient.Builder().build()
 
     val categories = listOf(
         Category("most_watched", "Most Watched"),
@@ -24,7 +39,7 @@ object MovieRepository {
         "Netflix"
     )
 
-    // Curated high-resolution cinematic posters & stills
+    // Curated high-resolution reference movies matching the PrimeVision image
     private val initialMovies = listOf(
         Movie(
             id = "dune",
@@ -144,6 +159,22 @@ object MovieRepository {
 
     private val initialSeries = listOf(
         Movie(
+            id = "the_boys",
+            title = "The Boys",
+            posterUrl = "https://image.tmdb.org/t/p/w780/2zmTngn1tYC1AvfnNDBpQI4r1Ce.jpg",
+            backdropUrl = "https://image.tmdb.org/t/p/original/nxxAMC0n8uM62lRjNkywZ9gQ445.jpg",
+            year = "2024",
+            duration = "4 Seasons",
+            rating = "8.7",
+            contentRating = "TV-MA",
+            quality = "4K",
+            synopsis = "A fun and irreverent take on what happens when superheroes abuse their superpowers rather than use them for good.",
+            genres = listOf("Action", "Sci-Fi"),
+            isSeries = true,
+            platform = "HBO Max",
+            isFavorite = true
+        ),
+        Movie(
             id = "chernobyl",
             title = "Chernobyl",
             posterUrl = "https://image.tmdb.org/t/p/w780/hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg",
@@ -158,22 +189,6 @@ object MovieRepository {
             isSeries = true,
             platform = "HBO Max",
             isFavorite = true
-        ),
-        Movie(
-            id = "got",
-            title = "Game of Thrones",
-            posterUrl = "https://image.tmdb.org/t/p/w780/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
-            backdropUrl = "https://image.tmdb.org/t/p/original/suopoADq0k8YZr4dQXLi6q0xHHO.jpg",
-            year = "2011",
-            duration = "8 Seasons",
-            rating = "9.2",
-            contentRating = "TV-MA",
-            quality = "4K",
-            synopsis = "Nine noble families fight for control over the lands of Westeros, while an ancient enemy returns after being dormant for millennia.",
-            genres = listOf("Action", "Adventure", "Drama"),
-            isSeries = true,
-            platform = "HBO Max",
-            isFavorite = false
         ),
         Movie(
             id = "last_of_us",
@@ -212,11 +227,119 @@ object MovieRepository {
         }
     }
 
-    fun search(query: String): List<Movie> {
-        if (query.isBlank()) return emptyList()
+    suspend fun loadLiveTrendingFeeds() = withContext(Dispatchers.IO) {
+        try {
+            val url = "$TMDB_BASE_URL/trending/movie/week?api_key=$TMDB_API_KEY"
+            val request = Request.Builder().url(url).build()
+            val response = httpClient.newCall(request).execute()
+            if (response.isSuccessful) {
+                val jsonStr = response.body?.string() ?: return@withContext
+                val root = JSONObject(jsonStr)
+                val results = root.optJSONArray("results") ?: return@withContext
+                val liveList = mutableListOf<Movie>()
+
+                for (i in 0 until results.length()) {
+                    val item = results.getJSONObject(i)
+                    val id = item.optString("id", "")
+                    val title = item.optString("title", item.optString("name", "Unknown"))
+                    val posterPath = item.optString("poster_path", "")
+                    val backdropPath = item.optString("backdrop_path", "")
+                    val voteAverage = item.optDouble("vote_average", 8.0)
+                    val releaseDate = item.optString("release_date", item.optString("first_air_date", "2024"))
+                    val year = if (releaseDate.length >= 4) releaseDate.substring(0, 4) else "2024"
+                    val overview = item.optString("overview", "")
+
+                    if (posterPath.isNotEmpty()) {
+                        liveList.add(
+                            Movie(
+                                id = "tmdb_$id",
+                                title = title,
+                                posterUrl = "$TMDB_IMG_POSTER$posterPath",
+                                backdropUrl = "$TMDB_IMG_BACKDROP$backdropPath",
+                                year = year,
+                                duration = "1h 50m",
+                                rating = String.format(Locale.US, "%.1f", voteAverage),
+                                contentRating = "PG-13",
+                                quality = "4K",
+                                synopsis = overview,
+                                genres = listOf("Popular", "Trending"),
+                                platform = "Popular"
+                            )
+                        )
+                    }
+                }
+
+                if (liveList.isNotEmpty()) {
+                    _movies.update { current ->
+                        val existingIds = current.map { it.id }.toSet()
+                        current + liveList.filter { it.id !in existingIds }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load live trending feeds from TMDB", e)
+        }
+    }
+
+    suspend fun search(query: String): List<Movie> = withContext(Dispatchers.IO) {
+        if (query.isBlank()) return@withContext emptyList()
         val q = query.trim().lowercase()
-        return (_movies.value + _series.value).filter {
+
+        // 1. Search memory / initial dataset
+        val localMatches = (_movies.value + _series.value).filter {
             it.title.lowercase().contains(q) || it.genres.any { g -> g.lowercase().contains(q) }
         }
+
+        // 2. Query all dynamically loaded Cloudstream .cs3 extensions
+        val extensionMatches = Cs3PluginLoader.searchAllProviders(query)
+
+        // 3. Fallback TMDB live search for instant results
+        val tmdbMatches = mutableListOf<Movie>()
+        try {
+            val url = "$TMDB_BASE_URL/search/multi?api_key=$TMDB_API_KEY&query=${java.net.URLEncoder.encode(query, "UTF-8")}"
+            val request = Request.Builder().url(url).build()
+            val response = httpClient.newCall(request).execute()
+            if (response.isSuccessful) {
+                val jsonStr = response.body?.string() ?: ""
+                val root = JSONObject(jsonStr)
+                val results = root.optJSONArray("results")
+                if (results != null) {
+                    for (i in 0 until minOf(results.length(), 6)) {
+                        val item = results.getJSONObject(i)
+                        val id = item.optString("id", "")
+                        val title = item.optString("title", item.optString("name", ""))
+                        val posterPath = item.optString("poster_path", "")
+                        val backdropPath = item.optString("backdrop_path", "")
+                        val voteAverage = item.optDouble("vote_average", 8.0)
+                        val releaseDate = item.optString("release_date", item.optString("first_air_date", "2024"))
+                        val year = if (releaseDate.length >= 4) releaseDate.substring(0, 4) else "2024"
+                        val overview = item.optString("overview", "")
+
+                        if (title.isNotEmpty() && posterPath.isNotEmpty()) {
+                            tmdbMatches.add(
+                                Movie(
+                                    id = "tmdb_search_$id",
+                                    title = title,
+                                    posterUrl = "$TMDB_IMG_POSTER$posterPath",
+                                    backdropUrl = "$TMDB_IMG_BACKDROP$backdropPath",
+                                    year = year,
+                                    duration = "1h 45m",
+                                    rating = String.format(Locale.US, "%.1f", voteAverage),
+                                    quality = "HD",
+                                    synopsis = overview,
+                                    platform = "Search"
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "TMDB search error", e)
+        }
+
+        val all = (localMatches + extensionMatches + tmdbMatches)
+        val seen = mutableSetOf<String>()
+        all.filter { seen.add(it.title.lowercase()) }
     }
 }

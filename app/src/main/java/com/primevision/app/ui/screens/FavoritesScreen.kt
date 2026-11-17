@@ -5,12 +5,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,7 +33,6 @@ import com.primevision.app.ui.components.MovieCard
 import com.primevision.app.ui.components.NavItem
 import com.primevision.app.ui.theme.PrimeObsidianGradient
 import com.primevision.app.ui.theme.PrimeTextMuted
-import com.primevision.app.ui.theme.PrimeTextPrimary
 
 @Composable
 fun FavoritesScreen(
@@ -43,9 +43,10 @@ fun FavoritesScreen(
     val movies by MovieRepository.movies.collectAsState()
     var selectedPlatform by remember { mutableStateOf("HBO Max") }
 
-    val favorites = remember(movies, selectedPlatform) {
-        movies.filter { it.isFavorite && (selectedPlatform.isEmpty() || it.platform == selectedPlatform) }
-            .ifEmpty { movies.filter { it.isFavorite } }
+    val featuredMovie = remember(movies, selectedPlatform) {
+        movies.find { it.id == "joker_folie" }
+            ?: movies.find { it.isFavorite && (selectedPlatform.isEmpty() || it.platform == selectedPlatform) }
+            ?: movies.firstOrNull()
     }
 
     Box(
@@ -56,23 +57,24 @@ fun FavoritesScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 100.dp),
+                .statusBarsPadding()
+                .padding(bottom = 110.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // 1. Centered Header "Favourites"
             Text(
                 text = "Favourites",
-                color = PrimeTextPrimary,
-                fontSize = 20.sp,
+                color = Color.White,
+                fontSize = 19.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.2).sp
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. Horizontal Streaming Platform Chips (HBO Max, Disney+, Apple TV, Netflix)
+            // 2. Horizontal Platform Filter Chips (HBO Max, Disney+, Apple TV, Netflix)
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -86,11 +88,10 @@ fun FavoritesScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // 3. Featured Movie Card (Large cinematic card matching reference)
-            if (favorites.isNotEmpty()) {
-                val featured = favorites.first()
+            // 3. Featured Movie Card (Joker: Folie à Deux)
+            if (featuredMovie != null) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -98,8 +99,8 @@ fun FavoritesScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     MovieCard(
-                        movie = featured,
-                        onClick = { onMovieClick(featured.id) },
+                        movie = featuredMovie,
+                        onClick = { onMovieClick(featuredMovie.id) },
                         cardWidth = 310.dp,
                         cardHeight = 440.dp,
                         showRating = true

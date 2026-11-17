@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.PlayArrow
@@ -25,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -34,24 +37,22 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.primevision.app.data.model.Movie
-import com.primevision.app.ui.theme.PrimeGlassBorder
-import com.primevision.app.ui.theme.PrimeHeroOverlayGradient
-import com.primevision.app.ui.theme.PrimeTextPrimary
 
 @Composable
 fun HeroSection(
     movie: Movie,
+    onBackClick: () -> Unit,
     onPlayClick: () -> Unit,
     onDownloadClick: () -> Unit,
     onMoreClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val bottomRadius = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+    val bottomRadius = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(420.dp)
+            .height(440.dp)
             .clip(bottomRadius)
     ) {
         // Hero Artwork (Edge-to-Edge)
@@ -65,18 +66,45 @@ fun HeroSection(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Gradient Overlay
+        // Gradient Overlay (Dark bottom)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(PrimeHeroOverlayGradient)
+                .background(
+                    Brush.verticalGradient(
+                        0.0f to Color(0x33000000),
+                        0.4f to Color.Transparent,
+                        0.75f to Color(0x88050B0B),
+                        1.0f to Color(0xF2050B0B)
+                    )
+                )
         )
+
+        // Back Button (Top Left)
+        Box(
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(Color(0x55050B0B))
+                .border(1.dp, Color(0x33FFFFFF), CircleShape)
+                .clickable(onClick = onBackClick),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = Color.White,
+                modifier = Modifier.size(18.dp)
+            )
+        }
 
         // Action Buttons Row (Play Now, Download, More)
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 20.dp),
+                .padding(bottom = 22.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -86,7 +114,7 @@ fun HeroSection(
                     .clip(RoundedCornerShape(24.dp))
                     .background(Color.White)
                     .clickable(onClick = onPlayClick)
-                    .padding(horizontal = 22.dp, vertical = 10.dp),
+                    .padding(horizontal = 24.dp, vertical = 11.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -109,18 +137,18 @@ fun HeroSection(
             // Download Glass Button (Circular)
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
-                    .background(Color(0x3D1A2E2B))
-                    .border(1.dp, PrimeGlassBorder, CircleShape)
+                    .background(Color(0x4D1A2B28))
+                    .border(1.dp, Color(0x33FFFFFF), CircleShape)
                     .clickable(onClick = onDownloadClick),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.FileDownload,
                     contentDescription = "Download",
-                    tint = PrimeTextPrimary,
-                    modifier = Modifier.size(19.dp)
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
@@ -129,18 +157,18 @@ fun HeroSection(
             // More Options Glass Button (Circular)
             Box(
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
-                    .background(Color(0x3D1A2E2B))
-                    .border(1.dp, PrimeGlassBorder, CircleShape)
+                    .background(Color(0x4D1A2B28))
+                    .border(1.dp, Color(0x33FFFFFF), CircleShape)
                     .clickable(onClick = onMoreClick),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.MoreHoriz,
                     contentDescription = "More",
-                    tint = PrimeTextPrimary,
-                    modifier = Modifier.size(19.dp)
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

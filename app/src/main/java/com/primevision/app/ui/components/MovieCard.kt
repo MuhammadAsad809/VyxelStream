@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -36,29 +37,24 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.primevision.app.data.model.Movie
-import com.primevision.app.ui.theme.PrimeCardBackground
-import com.primevision.app.ui.theme.PrimeCardOverlayGradient
-import com.primevision.app.ui.theme.PrimeGlassBorder
-import com.primevision.app.ui.theme.PrimeTextPrimary
-import com.primevision.app.ui.theme.PrimeTextSecondary
 
 @Composable
 fun MovieCard(
     movie: Movie,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    cardWidth: Dp = 180.dp,
-    cardHeight: Dp = 250.dp,
+    cardWidth: Dp = 172.dp,
+    cardHeight: Dp = 252.dp,
     showRating: Boolean = true
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.96f else 1.0f,
+        targetValue = if (isPressed) 0.97f else 1.0f,
         label = "card_scale"
     )
 
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(22.dp)
 
     Box(
         modifier = modifier
@@ -66,15 +62,15 @@ fun MovieCard(
             .height(cardHeight)
             .scale(scale)
             .clip(shape)
-            .background(PrimeCardBackground)
-            .border(width = 1.dp, color = PrimeGlassBorder, shape = shape)
+            .background(Color(0xFF0B1414))
+            .border(width = 1.dp, color = Color(0x24FFFFFF), shape = shape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
             )
     ) {
-        // 1. Movie Poster Image with Coil
+        // 1. Poster Image
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(movie.posterUrl)
@@ -85,14 +81,20 @@ fun MovieCard(
             modifier = Modifier.fillMaxSize()
         )
 
-        // 2. Dark Gradient Overlay
+        // 2. Cinematic Gradient Overlay
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(PrimeCardOverlayGradient)
+                .background(
+                    Brush.verticalGradient(
+                        0.45f to Color.Transparent,
+                        0.75f to Color(0xB3050B0B),
+                        1.0f to Color(0xF2050B0B)
+                    )
+                )
         )
 
-        // 3. Bottom Content (Title, Year, Duration, Rating Badge)
+        // 3. Bottom Text & Rating Badge
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -101,14 +103,14 @@ fun MovieCard(
         ) {
             Text(
                 text = movie.title,
-                color = PrimeTextPrimary,
-                fontSize = 16.sp,
+                color = Color.White,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -117,7 +119,7 @@ fun MovieCard(
             ) {
                 Text(
                     text = "${movie.year} • ${movie.duration}",
-                    color = PrimeTextSecondary,
+                    color = Color(0xFF90A3A0),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 )

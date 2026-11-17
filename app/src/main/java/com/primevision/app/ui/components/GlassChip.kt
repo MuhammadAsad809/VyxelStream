@@ -17,12 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.primevision.app.ui.theme.PrimeGlassBorder
-import com.primevision.app.ui.theme.PrimeGlassPill
-import com.primevision.app.ui.theme.PrimeGlassPillActive
-import com.primevision.app.ui.theme.PrimePrimary
-import com.primevision.app.ui.theme.PrimeTextMuted
-import com.primevision.app.ui.theme.PrimeTextPrimary
 
 @Composable
 fun GlassChip(
@@ -31,33 +25,36 @@ fun GlassChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val chipShape = RoundedCornerShape(22.dp)
+
     val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) PrimeGlassPillActive else PrimeGlassPill,
+        targetValue = if (isSelected) Color(0x33253633) else Color(0x1A14201E),
         label = "chip_bg"
     )
     val borderColor by animateColorAsState(
-        targetValue = if (isSelected) PrimePrimary else PrimeGlassBorder,
+        targetValue = if (isSelected) Color(0x66FFFFFF) else Color(0x22FFFFFF),
         label = "chip_border"
     )
     val textColor by animateColorAsState(
-        targetValue = if (isSelected) PrimeTextPrimary else PrimeTextMuted,
+        targetValue = if (isSelected) Color.White else Color(0xFF8E9E9C),
         label = "chip_text"
     )
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(chipShape)
             .background(backgroundColor)
-            .border(width = 1.dp, color = borderColor, shape = RoundedCornerShape(20.dp))
+            .border(width = 1.dp, color = borderColor, shape = chipShape)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 9.dp),
+            .padding(horizontal = 18.dp, vertical = 9.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = textColor,
             fontSize = 13.sp,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+            letterSpacing = (-0.1).sp
         )
     }
 }

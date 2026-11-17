@@ -2,7 +2,6 @@ package com.primevision.app.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,39 +11,43 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.primevision.app.data.model.Movie
+import com.primevision.app.data.plugin.Cs3PluginLoader
 import com.primevision.app.data.repository.MovieRepository
 import com.primevision.app.ui.components.GlassChip
 import com.primevision.app.ui.components.GlassNavigationBar
 import com.primevision.app.ui.components.HomeHeader
 import com.primevision.app.ui.components.MovieCard
 import com.primevision.app.ui.components.NavItem
-import com.primevision.app.ui.components.SectionHeader
-import com.primevision.app.ui.theme.PrimeBackground
 import com.primevision.app.ui.theme.PrimeGlassBorder
 import com.primevision.app.ui.theme.PrimeGlassPill
 import com.primevision.app.ui.theme.PrimeObsidianGradient
-import com.primevision.app.ui.theme.PrimePrimary
 import com.primevision.app.ui.theme.PrimeTextMuted
 import com.primevision.app.ui.theme.PrimeTextPrimary
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -52,15 +55,28 @@ fun HomeScreen(
     onNavigate: (NavItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     val movies by MovieRepository.movies.collectAsState()
     val series by MovieRepository.series.collectAsState()
 
     var selectedCategoryId by remember { mutableStateOf("most_watched") }
     var isSearchActive by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf<List<Movie>>(emptyList()) }
 
-    val filteredMovies = remember(searchQuery, movies) {
-        if (searchQuery.isBlank()) movies else MovieRepository.search(searchQuery)
+    // Initialize .cs3 plugins and live TMDB feeds on first launch
+    LaunchedEffect(Unit) {
+        Cs3PluginLoader.initialize(context)
+        MovieRepository.loadLiveTrendingFeeds()
+    }
+
+    // Dynamic search across local and loaded extensions
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.isNotBlank()) {
+            searchResults = MovieRepository.search(searchQuery)
+        }
     }
 
     Box(
@@ -68,16 +84,18 @@ fun HomeScreen(
             .fillMaxSize()
             .background(PrimeObsidianGradient)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 1. Top Header
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
+            // 1. Top Header (Logo + Action Buttons)
             HomeHeader(
                 onSearchClick = { isSearchActive = !isSearchActive },
-                onFilterClick = { /* Show filter/settings */ }
+                onFilterClick = { onNavigate(NavItem.EXPLORE) }
             )
 
-            // Search bar (animated expandable)
+            // Search Bar (expandable)
             AnimatedVisibility(visible = isSearchActive) {
                 Box(
                     modifier = Modifier
@@ -87,12 +105,18 @@ fun HomeScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search movies, genres, series...", color = PrimeTextMuted, fontSize = 13.sp) },
+                        placeholder = {
+                            Text(
+                                "Search movies, series, or extension streams...",
+                                color = PrimeTextMuted,
+                                fontSize = 13.sp
+                            )
+                        },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = PrimeGlassPill,
                             unfocusedContainerColor = PrimeGlassPill,
-                            focusedBorderColor = PrimePrimary,
+                            focusedBorderColor = Color(0x66FFFFFF),
                             unfocusedBorderColor = PrimeGlassBorder,
                             focusedTextColor = PrimeTextPrimary,
                             unfocusedTextColor = PrimeTextPrimary
@@ -118,32 +142,65 @@ fun HomeScreen(
                 }
             }
 
-            // 3. Main Feeds (Movies & Series Carousels)
+            // 3. Feeds: Movies & Series Carousels
             LazyColumn(
-                contentPadding = PaddingValues(bottom = 100.dp),
+                contentPadding = PaddingValues(bottom = 110.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                // Movies Section
-                item {
-                    SectionHeader(title = if (searchQuery.isBlank()) "Movies" else "Search Results")
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(filteredMovies, key = { it.id }) { movie ->
-                            MovieCard(
-                                movie = movie,
-                                onClick = { onMovieClick(movie.id) }
-                            )
+                if (searchQuery.isNotBlank()) {
+                    item {
+                        Text(
+                            text = "Results for \"$searchQuery\"",
+                            color = Color(0xFF90A3A0),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(searchResults, key = { it.id }) { movie ->
+                                MovieCard(
+                                    movie = movie,
+                                    onClick = { onMovieClick(movie.id) }
+                                )
+                            }
                         }
                     }
-                }
-
-                // Series Section
-                if (searchQuery.isBlank()) {
+                } else {
+                    // Movies Section
                     item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        SectionHeader(title = "Series")
+                        Text(
+                            text = "Movies",
+                            color = Color(0xFF90A3A0),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(movies, key = { it.id }) { movie ->
+                                MovieCard(
+                                    movie = movie,
+                                    onClick = { onMovieClick(movie.id) }
+                                )
+                            }
+                        }
+                    }
+
+                    // Series Section
+                    item {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text(
+                            text = "Series",
+                            color = Color(0xFF90A3A0),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                        )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)

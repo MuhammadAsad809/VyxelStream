@@ -3,10 +3,8 @@ package com.primevision.app.ui.screens
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,16 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -40,12 +33,7 @@ import coil.request.ImageRequest
 import com.primevision.app.data.repository.MovieRepository
 import com.primevision.app.ui.components.HeroSection
 import com.primevision.app.ui.components.RatingBadge
-import com.primevision.app.ui.theme.PrimeBackground
-import com.primevision.app.ui.theme.PrimeGlassBorder
-import com.primevision.app.ui.theme.PrimeGlassPill
 import com.primevision.app.ui.theme.PrimeObsidianGradient
-import com.primevision.app.ui.theme.PrimeTextPrimary
-import com.primevision.app.ui.theme.PrimeTextSecondary
 
 @Composable
 fun MovieDetailsScreen(
@@ -63,12 +51,13 @@ fun MovieDetailsScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 40.dp)
+            contentPadding = PaddingValues(bottom = 50.dp)
         ) {
             // 1. Edge-to-Edge Hero Section
             item {
                 HeroSection(
                     movie = movie,
+                    onBackClick = onBackClick,
                     onPlayClick = {
                         Toast.makeText(context, "Streaming: ${movie.title}", Toast.LENGTH_SHORT).show()
                     },
@@ -83,24 +72,65 @@ fun MovieDetailsScreen(
                 )
             }
 
-            // 2. Info Metadata Row (2022 • 1h 45m • CC • HD)
+            // 2. Info Metadata Row (2022 • 1h 45m • [CC] • [HD])
             item {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(18.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "${movie.year}  •  ${movie.duration}  •  ${movie.contentRating}  •  ${movie.quality}",
-                        color = PrimeTextSecondary,
+                        text = movie.year,
+                        color = Color(0xFF90A3A0),
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        letterSpacing = 0.5.sp
+                        fontWeight = FontWeight.Medium
                     )
+                    Text(
+                        text = "  •  ",
+                        color = Color(0xFF90A3A0),
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        text = movie.duration,
+                        color = Color(0xFF90A3A0),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "  •  ",
+                        color = Color(0xFF90A3A0),
+                        fontSize = 12.sp
+                    )
+                    Box(
+                        modifier = Modifier
+                            .border(1.dp, Color(0xFF5A6E6A), RoundedCornerShape(3.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = "CC",
+                            color = Color(0xFF90A3A0),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .border(1.dp, Color(0xFF5A6E6A), RoundedCornerShape(3.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = movie.quality,
+                            color = Color(0xFF90A3A0),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
-            // 3. Movie Title & Rating Badge
+            // 3. Movie Title & IMDb Rating Badge
             item {
                 Spacer(modifier = Modifier.height(14.dp))
                 Row(
@@ -112,78 +142,64 @@ fun MovieDetailsScreen(
                 ) {
                     Text(
                         text = movie.title,
-                        color = PrimeTextPrimary,
+                        color = Color.White,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.3).sp
                     )
-
                     RatingBadge(rating = movie.rating)
                 }
             }
 
-            // 4. Synopsis / Description
+            // 4. Movie Synopsis / Description
             item {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = movie.synopsis,
-                    color = PrimeTextSecondary,
-                    fontSize = 13.sp,
-                    lineHeight = 20.sp,
-                    fontWeight = FontWeight.Normal,
+                    color = Color(0xFF94A5A2),
+                    fontSize = 12.5.sp,
+                    lineHeight = 18.sp,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             }
 
-            // 5. Recommended Stills / Collections
-            if (movie.recommendedStills.isNotEmpty()) {
-                item {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 24.dp),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        items(movie.recommendedStills) { stillUrl ->
-                            Box(
-                                modifier = Modifier
-                                    .width(150.dp)
-                                    .height(95.dp)
-                                    .clip(RoundedCornerShape(18.dp))
-                                    .border(1.dp, PrimeGlassBorder, RoundedCornerShape(18.dp))
-                            ) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(LocalContext.current)
-                                        .data(stillUrl)
-                                        .crossfade(true)
-                                        .build(),
-                                    contentDescription = "Scene",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
+            // 5. Visual Stills / Recommended Content Carousel
+            item {
+                Spacer(modifier = Modifier.height(18.dp))
+                val stills = movie.recommendedStills.ifEmpty {
+                    listOf(
+                        "https://image.tmdb.org/t/p/w500/4HodYYKEIsGOdinkGi2Ucz6X9i0.jpg",
+                        "https://image.tmdb.org/t/p/w500/8cmi41E5g3Gk8K8mI7X731k6V9g.jpg"
+                    )
+                }
+
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    items(stills) { stillUrl ->
+                        val stillShape = RoundedCornerShape(18.dp)
+                        Box(
+                            modifier = Modifier
+                                .width(180.dp)
+                                .height(115.dp)
+                                .clip(stillShape)
+                                .background(Color(0xFF0D1716))
+                                .border(1.dp, Color(0x22FFFFFF), stillShape)
+                        ) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(stillUrl)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "Scene still",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         }
                     }
                 }
             }
-        }
-
-        // Floating Back Button
-        Box(
-            modifier = Modifier
-                .padding(top = 40.dp, start = 20.dp)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(PrimeGlassPill)
-                .border(1.dp, PrimeGlassBorder, CircleShape)
-                .clickable(onClick = onBackClick),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                tint = PrimeTextPrimary,
-                modifier = Modifier.size(18.dp)
-            )
         }
     }
 }

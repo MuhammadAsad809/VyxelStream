@@ -61,6 +61,10 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.okhttp)
+    implementation(libs.jsoup)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.kotlin)
 
     debugImplementation(libs.androidx.ui.tooling)
 }

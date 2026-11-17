@@ -1,8 +1,6 @@
 package com.primevision.app.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -31,13 +30,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.primevision.app.ui.theme.PrimeGlassBorder
-import com.primevision.app.ui.theme.PrimeTextMuted
-import com.primevision.app.ui.theme.PrimeTextPrimary
 
 enum class NavItem(val icon: ImageVector, val label: String) {
     HOME(Icons.Default.Home, "Home"),
-    EXPLORE(Icons.Default.Explore, "Explore"),
+    EXPLORE(Icons.Default.Explore, "Extensions"),
     FAVORITES(Icons.Default.Favorite, "Favorites"),
     PROFILE(Icons.Default.Person, "Profile")
 }
@@ -48,20 +44,21 @@ fun GlassNavigationBar(
     onItemSelected: (NavItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val pillShape = RoundedCornerShape(32.dp)
+    val capsuleShape = RoundedCornerShape(36.dp)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 48.dp, vertical = 20.dp),
+            .navigationBarsPadding()
+            .padding(horizontal = 44.dp, vertical = 18.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = Modifier
-                .height(58.dp)
-                .clip(pillShape)
-                .background(Color(0xDD0A1716))
-                .border(width = 1.dp, color = PrimeGlassBorder, shape = pillShape)
+                .height(60.dp)
+                .clip(capsuleShape)
+                .background(Color(0xE60A1414))
+                .border(width = 1.dp, color = Color(0x33FFFFFF), shape = capsuleShape)
                 .padding(horizontal = 14.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -69,11 +66,11 @@ fun GlassNavigationBar(
             NavItem.entries.forEach { item ->
                 val isSelected = item == selectedItem
                 val iconColor by animateColorAsState(
-                    targetValue = if (isSelected) PrimeTextPrimary else PrimeTextMuted,
+                    targetValue = if (isSelected) Color(0xFF0A1414) else Color(0xFF90A3A0),
                     label = "nav_icon_color"
                 )
                 val circleBackground by animateColorAsState(
-                    targetValue = if (isSelected) Color(0x38FFFFFF) else Color.Transparent,
+                    targetValue = if (isSelected) Color.White else Color.Transparent,
                     label = "nav_circle_bg"
                 )
 
