@@ -4,9 +4,6 @@ import com.lagradost.cloudstream3.SubtitleFile
 import java.io.Serializable
 
 open class ExtractorApi {
-    companion object {
-        const val `$stable` = 8
-    }
 
     open val name: String = ""
     open val mainUrl: String = ""

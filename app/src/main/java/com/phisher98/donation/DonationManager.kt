@@ -1,8 +1,6 @@
 package com.phisher98.donation
 
 object DonationManager {
-    const val `$stable` = 8
-
     @JvmStatic
     val INSTANCE = this
 

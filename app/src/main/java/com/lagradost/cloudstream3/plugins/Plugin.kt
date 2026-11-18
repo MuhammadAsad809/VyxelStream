@@ -9,9 +9,6 @@ import com.lagradost.cloudstream3.utils.ExtractorApi
 annotation class CloudstreamPlugin
 
 open class Plugin {
-    companion object {
-        const val `$stable` = 8
-    }
 
     var openSettings: ((Context) -> Unit)? = null
     var resources: Any? = null
